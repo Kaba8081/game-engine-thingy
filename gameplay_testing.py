@@ -79,11 +79,15 @@ def game():
                 if event.key == pg.K_1:
                     DEBUG = not DEBUG
 
-        OFFSET = camera.update(OFFSET, [allSprites, allTiles])
-        camera.mouse_update(OFFSET, [allSprites, allTiles], mouse_pos)
+        for sprite in allSprites:
+            sprite.update(OFFSET)
 
-        for spriteGroup in allSpriteGroups:
-            spriteGroup.draw(screen)
+        camera.mouse_update(OFFSET, [allSprites, allTiles], mouse_pos)
+        OFFSET = camera.update(OFFSET, [allSprites, allTiles], playerGroup, screen)
+
+        #for spriteGroup in allSpriteGroups:
+        #    spriteGroup.draw(screen)
+
         if DEBUG:
             d1.update(screen, OFFSET)
             camera.draw_debug(screen)

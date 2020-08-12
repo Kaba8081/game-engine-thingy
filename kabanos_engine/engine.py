@@ -61,6 +61,9 @@ class Tile(pygame.sprite.Sprite):
         self.collidable = True
         self.tilesize = tilesize
 
+    def update(self, OFFSET):
+        self.rect.x, self.rect.y = self.pos[0] + OFFSET[0],self.pos[1] + OFFSET[1]
+
     def draw_debug(self, screen):
         pygame.draw.line(screen, (0,0,255), (self.rect.x, self.rect.y), (self.rect.x + self.tilesize, self.rect.y))
         pygame.draw.line(screen, (0,0,255), (self.rect.x + self.tilesize, self.rect.y), (self.rect.x + self.tilesize, self.rect.y + self.tilesize))
@@ -76,10 +79,13 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx, self.rect.centery = pos_x, pos_y
 
+        self.pos = [pos_x, pos_y]
+
         self.speed = movement_speed
         self.tilesize = 32
     
-    def movement(self, SpriteGroups):
+    def movement(self, SpriteGroups, OFFSET):
+        self.rect.centerx, self.rect.centery = self.pos[0] - OFFSET[0], self.pos[1] - OFFSET[1]
         keys = pygame.key.get_pressed()
 
         pos_change = [0, 0]
@@ -128,6 +134,8 @@ class Player(pygame.sprite.Sprite):
 class Camera:
     def __init__(self, player, width, height):
         self.player = player
+        self.camera_offset = [0,0]
+
         self.left = (width/8)*2
         self.right = (width/8)*6
         self.top = (height/8)*2
@@ -139,46 +147,68 @@ class Camera:
         self.centerx = width/2
         self.centery = height/2
 
-    def update(self, OFFSET, SpriteGroups):
-        pos_change = self.player.movement(SpriteGroups)
+    def update(self, OFFSET, SpriteGroups, playerGroup, screen):
+        pos_change = self.player.movement(SpriteGroups, OFFSET)
 
         value = self.player_at_edge(pos_change)
 
         if value[0] != 0:
             if value[0] == 1:
                 OFFSET[0] += self.player.speed
+                self.player.pos[0] += self.player.speed
             else: 
                 OFFSET[0] += -self.player.speed
+                self.player.pos[1] += -self.player.speed
         else:
             self.player.rect.x += pos_change[0]
+            self.player.pos[0] += pos_change[0]
         
         if value[1] != 0:
             if value[1] == 1:
                 OFFSET[1] += self.player.speed
+                self.player.pos[1] += self.player.speed
             else:
                 OFFSET[1] += -self.player.speed
+                self.player.pos[1] += -self.player.speed
         else:
             self.player.rect.y += pos_change[1]
+            self.player.pos[1] += pos_change[1]
 
         #for SpriteGroup in SpriteGroups:
         #    for sprite in SpriteGroup:
         #        sprite.rect.x = sprite.pos[0] + OFFSET[0]
         #        sprite.rect.y = sprite.pos[1] + OFFSET[1]
 
-        return OFFSET
-    
-    def mouse_update(self, OFFSET, SpriteGroups, mouse_pos):
-        new_OFFSET = []
-        new_OFFSET.append(OFFSET[0] - (mouse_pos[0] - self.centerx))
-        new_OFFSET.append(OFFSET[1] - (mouse_pos[1] - self.centery))
-
-        self.player.rect.x + (mouse_pos[0] - self.centerx)
-        self.player.rect.y + (mouse_pos[1] - self.centery)
+        self.player.rect.x += self.camera_offset[0]
+        self.player.rect.y += self.camera_offset[1]
 
         for SpriteGroup in SpriteGroups:
             for sprite in SpriteGroup:
-                sprite.rect.x = sprite.pos[0] + new_OFFSET[0]
-                sprite.rect.y = sprite.pos[1] + new_OFFSET[1]    
+                sprite.rect.x += self.camera_offset[0]
+                sprite.rect.y += self.camera_offset[1]
+        
+        SpriteGroups.append(playerGroup)
+
+        for SpriteGroup in SpriteGroups:
+            SpriteGroup.draw(screen)
+
+        return OFFSET
+    
+    def mouse_update(self, OFFSET, SpriteGroups, mouse_pos):
+        #new_OFFSET = []
+        #new_OFFSET.append(OFFSET[0] - (mouse_pos[0] - self.centerx))
+        #new_OFFSET.append(OFFSET[1] - (mouse_pos[1] - self.centery))
+
+        #self.player.rect.x + (mouse_pos[0] - self.centerx)
+        #self.player.rect.y + (mouse_pos[1] - self.centery)
+
+        #for SpriteGroup in SpriteGroups:
+        #    for sprite in SpriteGroup:
+        #        sprite.rect.x = sprite.pos[0] + new_OFFSET[0]
+        #        sprite.rect.y = sprite.pos[1] + new_OFFSET[1]    
+
+        self.camera_offset[0] = mouse_pos[0] - self.centerx
+        self.camera_offset[1] = mouse_pos[1] - self.centery
 
     def player_at_edge(self, pos_change): # 0 - None; 1 - left / top; 2 - right / bottom
         if self.player.rect.left + pos_change[0] < self.left:
