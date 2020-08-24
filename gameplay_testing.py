@@ -82,6 +82,9 @@ def game():
         for sprite in allSprites:
             sprite.update(OFFSET)
 
+        for tile in allTiles:
+            tile.update(OFFSET)
+
         camera.mouse_update(OFFSET, [allSprites, allTiles], mouse_pos)
         OFFSET = camera.update(OFFSET, [allSprites, allTiles], playerGroup, screen)
 

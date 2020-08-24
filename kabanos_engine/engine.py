@@ -1,4 +1,5 @@
 # Kaba's engine for simple games made in python using pygame
+# github: https://github.com/Kaba8081/game-engine-thingy
 # Not much but it's honest work
 
 from ast import literal_eval
@@ -85,7 +86,7 @@ class Player(pygame.sprite.Sprite):
         self.tilesize = 32
     
     def movement(self, SpriteGroups, OFFSET):
-        self.rect.centerx, self.rect.centery = self.pos[0] - OFFSET[0], self.pos[1] - OFFSET[1]
+        self.rect.centerx, self.rect.centery = self.pos[0], self.pos[1]# - OFFSET[0], self.pos[1] - OFFSET[1]
         keys = pygame.key.get_pressed()
 
         pos_change = [0, 0]
@@ -147,10 +148,13 @@ class Camera:
         self.centerx = width/2
         self.centery = height/2
 
+        self.debug0 = DebugText(0,"camera_offset: ", (255,255,255), (0,12))
+        self.debug1 = DebugText(0,"pos_change: ", (255,255,255), (0,24))
+
     def update(self, OFFSET, SpriteGroups, playerGroup, screen):
         pos_change = self.player.movement(SpriteGroups, OFFSET)
 
-        value = self.player_at_edge(pos_change)
+        value = 0,0 # self.player_at_edge(pos_change)
 
         if value[0] != 0:
             if value[0] == 1:
@@ -158,7 +162,7 @@ class Camera:
                 self.player.pos[0] += self.player.speed
             else: 
                 OFFSET[0] += -self.player.speed
-                self.player.pos[1] += -self.player.speed
+                self.player.pos[0] += -self.player.speed
         else:
             self.player.rect.x += pos_change[0]
             self.player.pos[0] += pos_change[0]
@@ -181,6 +185,8 @@ class Camera:
 
         self.player.rect.x += self.camera_offset[0]
         self.player.rect.y += self.camera_offset[1]
+
+        self.debug1.update(screen,pos_change)
 
         for SpriteGroup in SpriteGroups:
             for sprite in SpriteGroup:
@@ -207,10 +213,10 @@ class Camera:
         #        sprite.rect.x = sprite.pos[0] + new_OFFSET[0]
         #        sprite.rect.y = sprite.pos[1] + new_OFFSET[1]    
 
-        self.camera_offset[0] = mouse_pos[0] - self.centerx
-        self.camera_offset[1] = mouse_pos[1] - self.centery
+        self.camera_offset[0] = mouse_pos[0] - self.player.pos[0]
+        self.camera_offset[1] = mouse_pos[1] - self.player.pos[1]
 
-    def player_at_edge(self, pos_change): # 0 - None; 1 - left / top; 2 - right / bottom
+    def player_at_edge(self, pos_change): # 0 - None; 1 - left / top; 2 - right / bottom]
         if self.player.rect.left + pos_change[0] < self.left:
             if self.player.rect.top + pos_change[1] < self.top:
                 pos_change[0] = 0 
@@ -247,15 +253,13 @@ class Camera:
 
     def draw_debug(self, screen):
         mouse_pos = pygame.mouse.get_pos()
-        #pygame.draw.line(screen, (255,0,0), (self.left, self.top), (self.right, self.top))
-        #pygame.draw.line(screen, (255,0,0), (self.left, self.top), (self.left, self.bottom))
-        #pygame.draw.line(screen, (255,0,0), (self.left, self.bottom), (self.right, self.bottom))
-        #pygame.draw.line(screen, (255,0,0), (self.right, self.bottom), (self.right, self.top))
 
-        pygame.draw.line(screen, (255,0,0), (self.left - (mouse_pos[0] - self.centerx), self.top - (mouse_pos[1] - self.centery)), (self.right - (mouse_pos[0] - self.centerx), self.top - (mouse_pos[1] - self.centery)))
-        pygame.draw.line(screen, (255,0,0), (self.left - (mouse_pos[0] - self.centerx), self.top - (mouse_pos[1] - self.centery)), (self.left - (mouse_pos[0] - self.centerx), self.bottom - (mouse_pos[1] - self.centery)))
-        pygame.draw.line(screen, (255,0,0), (self.left - (mouse_pos[0] - self.centerx), self.bottom - (mouse_pos[1] - self.centery)), (self.right - (mouse_pos[0] - self.centerx), self.bottom - (mouse_pos[1] - self.centery)))
-        pygame.draw.line(screen, (255,0,0), (self.right - (mouse_pos[0] - self.centerx), self.bottom - (mouse_pos[1] - self.centery)), (self.right - (mouse_pos[0] - self.centerx), self.top - (mouse_pos[1] - self.centery)))
+        pygame.draw.line(screen, (255,0,0), (self.left + (self.player.rect.centerx - self.centerx), self.top + (self.player.rect.centery - self.centery)), (self.right + (self.player.rect.centerx  - self.centerx), self.top + (self.player.rect.centery - self.centery)))
+        pygame.draw.line(screen, (255,0,0), (self.left + (self.player.rect.centerx  - self.centerx), self.top + (self.player.rect.centery - self.centery)), (self.left + (self.player.rect.centerx - self.centerx), self.bottom + (self.player.rect.centery - self.centery)))
+        pygame.draw.line(screen, (255,0,0), (self.left + (self.player.rect.centerx - self.centerx), self.bottom + (self.player.rect.centery - self.centery)), (self.right + (self.player.rect.centerx - self.centerx), self.bottom + (self.player.rect.centery - self.centery)))
+        pygame.draw.line(screen, (255,0,0), (self.right + (self.player.rect.centerx  - self.centerx), self.bottom + (self.player.rect.centery - self.centery)), (self.right + (self.player.rect.centerx - self.centerx), self.top + (self.player.rect.centery - self.centery)))
+
+        self.debug0.update(screen,self.camera_offset)
 
 class DebugText:
     def __init__(self, fontID, text, color, position):
