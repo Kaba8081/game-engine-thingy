@@ -340,16 +340,16 @@ class Cave_Generator:
     def create_map(self):
         map = []
         
-        for x in range(self.width):
+        for y in range(self.height):
             empty_list = []
-            for y in range(self.height):
+            for x in range(self.width):
                 empty_list.append(False)
             map.append(empty_list)
         
-        for index_x, x in enumerate(map):
-            for index_y, y in enumerate(map[index_x]):
+        for index_y, y in enumerate(map):
+            for index_x, x in enumerate(map[index_y]):
                 if self.birth_chance < random.randint(0,100):
-                    map[index_x][index_y] = True
+                    map[index_y][index_x] = True
 
         return map
 
@@ -365,7 +365,7 @@ class Cave_Generator:
                     pass
                 elif neighbour_x < 0 or neighbour_y < 0 or neighbour_x >= self.width or neighbour_y >= self.height:    
                     count += 1
-                elif oldMap[neighbour_x][neighbour_y]:
+                elif oldMap[neighbour_y][neighbour_x]:
                     count += 1
         
         return count
@@ -373,62 +373,62 @@ class Cave_Generator:
     def do_simulation_step(self, oldMap):
         newMap = []
 
-        for x in range(self.width):
+        for y in range(self.height):
             empty_list = []
-            for y in range(self.height):
+            for x in range(self.width):
                 empty_list.append(False)
             newMap.append(empty_list)
 
-        for index_x, x in enumerate(oldMap):
-            for index_y, y in enumerate(oldMap):
+        for index_y, y in enumerate(oldMap):
+            for index_x, x in enumerate(y):
                 nbs = self.count_alive_neighbours(index_x, index_y, oldMap)
                 
-                if oldMap[index_x][index_y]:
+                if oldMap[index_y][index_x]:
                     if nbs < self.death_limit:
-                        newMap[index_x][index_y] = False
+                        newMap[index_y][index_x] = False
                     else: 
-                        newMap[index_x][index_y] = True
+                        newMap[index_y][index_x] = True
                 else: 
                     if nbs > self.birth_limit:
-                        newMap[index_x][index_y] = True
+                        newMap[index_y][index_x] = True
                     else:
-                        newMap[index_x][index_y] = False
+                        newMap[index_y][index_x] = False
         
         return newMap
 
     def replace_values(self, oldMap):
         newMap = []
 
-        for x in range(self.width):
+        for y in range(self.height):
             empty_list = []
-            for y in range(self.height):
+            for x in range(self.width):
                 empty_list.append(False)
             newMap.append(empty_list)
 
-        for index_x, x in enumerate(oldMap):
-            for index_y, y in enumerate(oldMap[index_x]):
-                if oldMap[index_x][index_y]:
-                    newMap[index_x][index_y] = 1
+        for index_y, y in enumerate(oldMap):
+            for index_x, x in enumerate(y):
+                if oldMap[index_y][index_x]:
+                    newMap[index_y][index_x] = 1
                 else:
-                    newMap[index_x][index_y] = 0
+                    newMap[index_y][index_x] = 0
         return newMap
 
     def make_borders(self, oldMap):
         newMap = oldMap
-        for index_x,x in enumerate(oldMap):
-            for index_y,y in enumerate(x):
+        for index_y, y in enumerate(oldMap):
+            for index_x,x in enumerate(y):
                 if index_x == 0 or index_y == 0:
-                    newMap[index_x][index_y] = 1
+                    newMap[index_y][index_x] = 1
                 elif index_x == self.width-1 or index_y == self.height-1:
-                    newMap[index_x][index_y] = 1
+                    newMap[index_y][index_x] = 1
         return newMap
 
     def pick_starting_point(self, map):
         while True:
-            for indexx,x in enumerate(map):
-                for indexy,y in enumerate(x):
-                    if y == 0:
-                        return indexx, indexy
+            for indexy,y in enumerate(map):
+                for indexx,x in enumerate(y):
+                    if x == 0:
+                        return indexy, indexx
 
     def generate_cave(self):
         map = self.create_map()
