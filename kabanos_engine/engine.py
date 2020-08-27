@@ -314,8 +314,8 @@ class Weapon(pygame.sprite.Sprite):
         if self.pause > 0:
             self.pause -= 1
 
-        self.b = Bullet(self.rect.centerx, self.rect.centery, 1, 1, 0, 0, self.BulletTexture)
-        BulletsGroup.add(self.b)
+        #self.b = Bullet(self.rect.centerx, self.rect.centery, 1, 1, 0, 0, self.BulletTexture)
+        #BulletsGroup.add(self.b)
 
     def shoot(self, bulletsGroup, mouse_pos):
         if self.pause == 0:
@@ -373,6 +373,8 @@ class DebugText:
 
         if fontID == 0:
             self.font = pygame.font.SysFont("Arial", 10,bold=False,italic=False)
+        elif fontID == 1:
+            self.font = pygame.font.SysFont("Arial", 15,bold=False,italic=False)
 
         if self.font != None:
             self.label = self.font.render(str(self.text), 1, self.color)

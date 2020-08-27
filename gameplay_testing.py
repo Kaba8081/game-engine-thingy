@@ -59,6 +59,7 @@ bullet_textures.append(pg.image.load(path.join(img_dir,"shotgun_bullet.png")).co
 tile_textures.append(pg.transform.scale(pg.image.load(path.join(img_dir,"missing_texture.png")).convert_alpha(),(TILESIZE,TILESIZE)))
 tile_textures.append(pg.transform.scale(pg.image.load(path.join(img_dir,"placeholder64.png")).convert_alpha(),(TILESIZE,TILESIZE)))
 
+fps_counter = engine.DebugText(1,"",(235, 183, 52), (WIDTH-35, 5))
 
 p = engine.Player(WIDTH/2, HEIGHT/2, player_textures, 5)
 playerGroup.add(p)
@@ -67,10 +68,6 @@ WeaponsGroup.add(pistol)
 p.assign_weapon(pistol)
 
 camera = engine.Camera(p, WIDTH, HEIGHT)
-
-#map = engine.Map(lvl_dir, "1", tile_textures)
-#allTiles = map.place_tiles(allTiles, OFFSET)
-
 map = engine.Map(lvl_dir, tile_textures)
 cave_generator = engine.Cave_Generator(50,50,60,3,4,15)
 generated_level, starting_point = cave_generator.generate_cave()
@@ -118,13 +115,13 @@ def game():
         OFFSET = camera.update(OFFSET, [allSprites, allTiles, BulletsGroup], playerGroup, screen)
 
         WeaponsGroup.draw(screen)
-
         if DEBUG:
             d1.update(screen, OFFSET)
             camera.draw_debug(screen)
             for spriteGroup in allSpriteGroups:
                 for sprite in spriteGroup:
                     sprite.draw_debug(screen)
+            fps_counter.update(screen, str(int(clock.get_fps())))
         pg.display.flip()
         clock.tick(60)
 
