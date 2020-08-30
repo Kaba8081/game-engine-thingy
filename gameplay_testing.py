@@ -96,7 +96,7 @@ def game():
                     DEBUG = not DEBUG
 
         if mouse_but[0] == 1:
-            p.shoot(BulletsGroup, mouse_pos)
+            p.shoot(BulletsGroup, mouse_pos, camera.camera_offset)
 
         for sprite in allSprites:
             sprite.update(OFFSET)
@@ -104,15 +104,15 @@ def game():
         for tile in allTiles:
             tile.update(OFFSET)
 
-        for weapon in WeaponsGroup:
-            weapon.update(BulletsGroup)
-
         for bullet in BulletsGroup:
-            bullet.update()
+            bullet.update(p.pos_change)
 
         # drawing
-        camera.mouse_update(OFFSET, [allSprites, allTiles, BulletsGroup, WeaponsGroup], mouse_pos)
+        camera.mouse_update(OFFSET, mouse_pos)
         OFFSET = camera.update(OFFSET, [allSprites, allTiles, BulletsGroup], playerGroup, screen)
+
+        for weapon in WeaponsGroup:
+            weapon.update()
 
         WeaponsGroup.draw(screen)
         if DEBUG:
@@ -121,7 +121,8 @@ def game():
             for spriteGroup in allSpriteGroups:
                 for sprite in spriteGroup:
                     sprite.draw_debug(screen)
-            fps_counter.update(screen, str(int(clock.get_fps())))
+            camera.debug1.update(screen, p.pos_change)
+        fps_counter.update(screen, str(int(clock.get_fps())))
         pg.display.flip()
         clock.tick(60)
 

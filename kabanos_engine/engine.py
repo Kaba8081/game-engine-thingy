@@ -85,8 +85,11 @@ class Player(pygame.sprite.Sprite):
         self.speed = movement_speed
         self.tilesize = 32
         self.weapon = None
+        self.pos_change = [0,0]
+        self.total_change = [0,0]
 
         self.debug0 = DebugText(0,"player_center: ", (255,255,255), (0,48))
+        self.debug1 = DebugText(0,"player_change: ", (255,255,255), (0,60))
     
     def movement(self, SpriteGroups, OFFSET):
         self.rect.centerx, self.rect.centery = self.pos[0], self.pos[1]# - OFFSET[0], self.pos[1] - OFFSET[1]
@@ -109,6 +112,9 @@ class Player(pygame.sprite.Sprite):
         
         if self.colliding_on_y(SpriteGroups, pos_change):
             pos_change[1] = 0
+
+        self.total_change[0] += pos_change[0]
+        self.total_change[1] += pos_change[1]
 
         return pos_change
 
@@ -135,7 +141,6 @@ class Player(pygame.sprite.Sprite):
                 elif pos_change[1] == 0:
                     self.image = self.textures[2]
                 
-
     def colliding_on_x(self, SpriteGroups, pos_change):
         for spriteGroup in SpriteGroups:
             for sprite in spriteGroup:
@@ -156,9 +161,9 @@ class Player(pygame.sprite.Sprite):
     def assign_weapon(self, weapon):
         self.weapon = weapon
 
-    def shoot(self, bulletsGroup, mouse_pos):
+    def shoot(self, bulletsGroup, mouse_pos, camera_offset):
         if self.weapon != None:
-            self.weapon.shoot(bulletsGroup, mouse_pos)
+            self.weapon.shoot(bulletsGroup, mouse_pos, camera_offset)
 
     def draw_debug(self, screen):
         pygame.draw.line(screen, (0,255,0), (self.rect.x, self.rect.y), (self.rect.x + self.tilesize, self.rect.y))
@@ -167,6 +172,7 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.line(screen, (0,255,0), (self.rect.x, self.rect.y + self.tilesize), (self.rect.x, self.rect.y))
 
         self.debug0.update(screen, (self.rect.centerx, self.rect.centery))
+        self.debug1.update(screen, (self.total_change[0], self.total_change[1]))
 
 class Camera:
     def __init__(self, player, width, height):
@@ -188,7 +194,7 @@ class Camera:
         self.debug1 = DebugText(0,"pos_change: ", (255,255,255), (0,24))
 
     def update(self, OFFSET, SpriteGroups, playerGroup, screen):
-        pos_change = self.player.movement(SpriteGroups, OFFSET)
+        self.player.pos_change = self.player.movement(SpriteGroups, OFFSET)
 
         value = 0,0 # self.player_at_edge(pos_change)
 
@@ -200,8 +206,7 @@ class Camera:
                 OFFSET[0] += -self.player.speed
                 self.player.pos[0] += -self.player.speed
         else:
-            self.player.rect.x += pos_change[0]
-            self.player.pos[0] += pos_change[0]
+            self.player.pos[0] += self.player.pos_change[0]
         
         if value[1] != 0:
             if value[1] == 1:
@@ -211,15 +216,12 @@ class Camera:
                 OFFSET[1] += -self.player.speed
                 self.player.pos[1] += -self.player.speed
         else:
-            self.player.rect.y += pos_change[1]
-            self.player.pos[1] += pos_change[1]
+            self.player.pos[1] += self.player.pos_change[1]
 
-        self.player.animation(pos_change)
+        self.player.animation(self.player.pos_change)
 
         self.player.rect.x += self.camera_offset[0]
         self.player.rect.y += self.camera_offset[1]
-
-        self.debug1.update(screen,pos_change)
 
         for SpriteGroup in SpriteGroups:
             for sprite in SpriteGroup:
@@ -233,7 +235,7 @@ class Camera:
 
         return OFFSET
     
-    def mouse_update(self, OFFSET, SpriteGroups, mouse_pos):
+    def mouse_update(self, OFFSET, mouse_pos):
         self.camera_offset[0] = -mouse_pos[0] - self.player.pos[0] + self.centerx * 2
         self.camera_offset[1] = -mouse_pos[1] - self.player.pos[1] + self.centery * 2
 
@@ -273,8 +275,6 @@ class Camera:
                 return 0,0   
 
     def draw_debug(self, screen):
-        mouse_pos = pygame.mouse.get_pos()
-
         pygame.draw.line(screen, (255,0,0), (self.left + (self.player.rect.centerx - self.centerx), self.top + (self.player.rect.centery - self.centery)), (self.right + (self.player.rect.centerx  - self.centerx), self.top + (self.player.rect.centery - self.centery)))
         pygame.draw.line(screen, (255,0,0), (self.left + (self.player.rect.centerx  - self.centerx), self.top + (self.player.rect.centery - self.centery)), (self.left + (self.player.rect.centerx - self.centerx), self.bottom + (self.player.rect.centery - self.centery)))
         pygame.draw.line(screen, (255,0,0), (self.left + (self.player.rect.centerx - self.centerx), self.bottom + (self.player.rect.centery - self.centery)), (self.right + (self.player.rect.centerx - self.centerx), self.bottom + (self.player.rect.centery - self.centery)))
@@ -305,26 +305,24 @@ class Weapon(pygame.sprite.Sprite):
             self.maxPause = 20
             
         self.debug0 = DebugText(0,"weapon_center: ", (255,255,255), (0,36))
+        self.debug = debug_placeholder(0,0)
 
-    def update(self, BulletsGroup):
+    def update(self):
         if self.mounted_to_player:
-            self.rect.x = self.player.rect.centerx
+            self.rect.x = self.player.rect.centerx 
             self.rect.y = self.player.rect.centery
 
         if self.pause > 0:
             self.pause -= 1
 
-        #self.b = Bullet(self.rect.centerx, self.rect.centery, 1, 1, 0, 0, self.BulletTexture)
-        #BulletsGroup.add(self.b)
-
-    def shoot(self, bulletsGroup, mouse_pos):
+    def shoot(self, bulletsGroup, mouse_pos, camera_offset):
         if self.pause == 0:
             if self.weaponID == 0:
                     self.pause = self.maxPause
-                    dx = mouse_pos[0] - self.rect.centerx + random.randint(-8,8)
-                    dy = mouse_pos[1] - self.rect.centery + random.randint(-8,8)
+                    dx = -camera_offset[0] - self.player.total_change[0] + random.randint(-8,8)
+                    dy = -camera_offset[1] - self.player.total_change[1] + random.randint(-8,8)
                     if abs(dx) > 0 or abs(dy) > 0 :
-                        b = Bullet(self.rect.centerx, self.rect.centery, dx, dy, random.randint(7,8), 0, self.BulletTexture)
+                        b = Bullet(self.rect.centerx - camera_offset[0], self.rect.centery - camera_offset[1], dx, dy, random.randint(7,8), 0, self.BulletTexture)
                         bulletsGroup.add(b)
 
     def draw_debug(self, screen):
@@ -352,7 +350,7 @@ class Bullet(pygame.sprite.Sprite):
         self.dir = pygame.math.Vector2(dx, dy).normalize()
         self.collidable = False
 
-    def update(self):
+    def update(self, player_change):
         self.pos += self.dir * self.speed
         self.rect.x = self.pos[0]
         self.rect.y = self.pos[1]
@@ -362,7 +360,6 @@ class Bullet(pygame.sprite.Sprite):
         pygame.draw.line(screen, (255,102,102), (self.rect.left, self.rect.top), (self.rect.left, self.rect.bottom))
         pygame.draw.line(screen, (255,102,102), (self.rect.left, self.rect.bottom), (self.rect.right, self.rect.bottom))
         pygame.draw.line(screen, (255,102,102), (self.rect.right, self.rect.bottom), (self.rect.right, self.rect.top))
-
 
 class DebugText:
     def __init__(self, fontID, text, color, position):
@@ -546,3 +543,13 @@ class Cave_Generator:
         starting_point = self.pick_starting_point(map)
 
         return map, starting_point
+
+class debug_placeholder:
+    def __init__(self, pos_x, pos_y):
+        self.image = pygame.Surface((5,5))
+        self.image.fill((255,0,0))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = pos_x, pos_y
+    def update(self, pos_x, pos_y, screen):
+        self.rect.x, self.rect.y = pos_x, pos_y
+        pygame.draw.rect(screen, (255,0,0), self.rect)
