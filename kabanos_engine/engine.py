@@ -532,6 +532,12 @@ class Cave_Generator:
                     if x == 0:
                         return indexy, indexx
 
+    def list_rooms(self,map):
+        pass
+
+    def connect_rooms(self,map):
+        pass
+
     def generate_cave(self):
         map = self.create_map()
 
