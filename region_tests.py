@@ -6,6 +6,9 @@ from tkinter import ttk
 
 from colorama import Fore, Style
 
+# global variables 
+global width, height, birthChance, birthLimit, deathLimit, steps, generated_level, settings
+
 # dungeon settings preset
 settings = {
     "width":50,
@@ -16,8 +19,6 @@ settings = {
     "steps":11
 }
 
-# global variables 
-global width, height, birthChance, birthLimit, deathLimit, steps, generated_level
 generated_level = []
 
 # engine functions
@@ -37,21 +38,35 @@ def display_cave():
                 collumn += Fore.BLACK + str(y) + Style.RESET_ALL
         print(collumn)
 
-def GetRegion(startx, starty):
-    tiles = []
+def GetRegion(startx, starty, d_map, generator_settings):
+    def check_neighbours(startx, starty, d_map, queue, done, generator_settings):
+        for x in range(3):
+            for y in range(3):
+                if x == 1 and y == 1:
+                    pass
+                elif startx+(x-1) > generator_settings["width"] or startx+(x-1) < 0:
+                    pass
+                elif starty+(y-1) > generator_settings["height"] or starty+(y-1) < 0:
+                    pass 
+                elif d_map[x-1][y-1] == 0:
+                    if (startx+(x-1),starty+(y-1)) not in queue or (startx+(x-1),starty+(y-1)) not in done:
+                        queue.append((startx+(x-1),starty+(x-1)))
+        return queue
 
-    for x in range(3):
-        for y in range(3):
-            pass
+    queue = []
+    done = []
 
-    return tiles
+    while len(queue) > 0:
+        queue.append(check_neighbours(startx, starty, d_map, queue, done, generator_settings))
+        done.append(queue.pop(0))
+
+    return done
 
 def print_regions():
-    global generated_level
+    global generated_level, settings
 
     listRegions = []
     mapRegions = []
-    queue = []
 
     for x in generated_level:
         empty_list = []
@@ -63,7 +78,7 @@ def print_regions():
     for indexx, x in enumerate(generated_level):
         for indexy, y in enumerate(x):
             if mapRegions[indexx][indexy] == 0 and generated_level[indexx][indexy] == 0:
-                newRegion = GetRegion(indexx, indexy)
+                newRegion = GetRegion(indexx, indexy, generated_level, settings)
                 listRegions.append(newRegion)
 
                 for value in newRegion:
