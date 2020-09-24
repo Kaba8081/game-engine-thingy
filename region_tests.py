@@ -11,8 +11,8 @@ global width, height, birthChance, birthLimit, deathLimit, steps, generated_leve
 
 # dungeon settings preset
 settings = {
-    "width":50,
-    "height":50,
+    "width":70,
+    "height":70,
     "birthChance":60,
     "deathLimit":3,
     "birthLimit":4,
@@ -21,7 +21,7 @@ settings = {
 
 generated_level = []
 
-regionColors = [Fore.RED, Fore.BLUE, Fore.Green, Fore.MAGENTA, Fore.Cyan, Fore.WHITE]
+regionColors = [Fore.RED, Fore.BLUE, Fore.GREEN, Fore.MAGENTA, Fore.CYAN, Fore.WHITE]
 
 # engine functions
 def display_cave():
@@ -50,11 +50,9 @@ def GetRegion(startx, starty, d_map, generator_settings):
                     print("szerkosc")
                 elif starty+(y-1) > generator_settings["height"] or starty+(y-1) < 0:
                     print("wysokosc")
-                elif d_map[x-1][y-1] == 0:
-                    if (startx+(x-1),starty+(y-1)) not in queue or (startx+(x-1),starty+(y-1)) not in done:
-                        queue.append((startx+(x-1),starty+(x-1)))
-                        print((startx+(x-1),starty+(x-1)))
-        print(queue)
+                elif d_map[startx+(x-1)][starty+(y-1)] == 0:
+                    if (startx+(x-1),starty+(y-1)) not in queue and (startx+(x-1),starty+(y-1)) not in done:
+                        queue.append((startx+(x-1),starty+(y-1)))
         return queue
 
     queue = []
@@ -63,16 +61,13 @@ def GetRegion(startx, starty, d_map, generator_settings):
     queue = [(startx,starty)]
     while len(queue) > 0:
         queue = check_neighbours(queue[0][0], queue[0][1], d_map, queue, done, generator_settings)
-        print(queue)
         done.append(queue.pop(0))
 
-    print(done)
     return done
 
 def print_regions():
     global generated_level, settings
 
-    colorIndex = 0
     listRegions = []
     mapRegions = []
 
@@ -98,10 +93,12 @@ def print_regions():
             if y == 1: 
                 collumn += Fore.YELLOW + str(y) + Style.RESET_ALL
             elif y == 0 and mapRegions[indexx][indexy] == 1:
-                for index, region in mapRegions:
+                for index, region in enumerate(listRegions):
                     for tile in region:
-                        if x == tile[0] and y == tile[]
-                    collumn += Fore.RED + str(y) + Style.RESET_ALL
+                        if indexx == tile[0] and indexy == tile[1]:
+                            collumn += regionColors[index%len(regionColors)] + str(y) + Style.RESET_ALL
+            elif y == 0:
+                collumn += Fore.RED + str(y) + Style.RESET_ALL
             else:
                 collumn += Fore.BLACK + str(y) + Style.RESET_ALL
         print(collumn)
