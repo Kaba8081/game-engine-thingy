@@ -49,21 +49,40 @@ class Button(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = pos_x, pos_y
             
 class Tile(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, texture_id, textures, OFFSET, tilesize):
+    def __init__(self, pos_x, pos_y, texture_id, textures, OFFSET, tilesize, health = 3):
         pygame.sprite.Sprite.__init__(self)
         try:
-            self.image = textures[texture_id]
+            self.image = textures[0][texture_id]
         except:
-            self.image = textures[0]
+            self.image = textures[0][0]
 
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = pos_x + OFFSET[0],pos_y + OFFSET[1]
         self.pos = (pos_x, pos_y)
+        self.textures = textures
+        self.texture_id = texture_id
         self.collidable = True
         self.tilesize = tilesize
+        self.health = health
 
     def update(self, OFFSET):
         self.rect.x, self.rect.y = self.pos[0] + OFFSET[0],self.pos[1] + OFFSET[1]
+
+    def damage(self, units):
+        self.health -= units
+        
+        if self.health <= 0:
+            pygame.sprite.Sprite.kill(self)
+        elif self.health <= 2:
+            try: 
+                self.image = self.textures[1][self.texture_id]
+            except:
+                self.image = self.textures[0][0]
+        elif self.health <= 4:
+            try: 
+                self.image = self.textures[2][self.texture_id]
+            except:
+                self.image = self.textures[0][0]
 
     def draw_debug(self, screen):
         pygame.draw.line(screen, (0,0,255), (self.rect.x, self.rect.y), (self.rect.x + self.tilesize, self.rect.y))
@@ -175,9 +194,10 @@ class Player(pygame.sprite.Sprite):
         self.debug1.update(screen, (self.total_change[0], self.total_change[1]))
 
 class Camera:
-    def __init__(self, player, width, height):
+    def __init__(self, player, width, height, sensivity):
         self.player = player
         self.camera_offset = [0,0]
+
 
         self.left = (width/8)*2
         self.right = (width/8)*6
@@ -192,6 +212,9 @@ class Camera:
 
         self.debug0 = DebugText(0,"camera_offset: ", (255,255,255), (0,12))
         self.debug1 = DebugText(0,"pos_change: ", (255,255,255), (0,24))
+
+        self.sensivity = sensivity
+        self.camera_sensivity = 1 + (1/self.sensivity)
 
     def update(self, OFFSET, SpriteGroups, playerGroup, screen):
         self.player.pos_change = self.player.movement(SpriteGroups, OFFSET)
@@ -236,8 +259,8 @@ class Camera:
         return OFFSET
     
     def mouse_update(self, OFFSET, mouse_pos):
-        self.camera_offset[0] = -mouse_pos[0] - self.player.pos[0] + self.centerx * 2
-        self.camera_offset[1] = -mouse_pos[1] - self.player.pos[1] + self.centery * 2
+        self.camera_offset[0] = round(-mouse_pos[0]/self.sensivity - self.player.pos[0] + self.centerx * self.camera_sensivity,5)
+        self.camera_offset[1] = round(-mouse_pos[1]/self.sensivity - self.player.pos[1] + self.centery * self.camera_sensivity,5)
 
     def player_at_edge(self, pos_change): # 0 - None; 1 - left / top; 2 - right / bottom]
         if self.player.rect.left + pos_change[0] < self.left:
@@ -322,7 +345,7 @@ class Weapon(pygame.sprite.Sprite):
                     dx = -camera_offset[0] - self.player.total_change[0] + random.randint(-8,8)
                     dy = -camera_offset[1] - self.player.total_change[1] + random.randint(-8,8)
                     if abs(dx) > 0 or abs(dy) > 0 :
-                        b = Bullet(self.rect.centerx - camera_offset[0], self.rect.centery - camera_offset[1], dx, dy, random.randint(7,8), 0, self.BulletTexture)
+                        b = Bullet(self.rect.centerx - camera_offset[0], self.rect.centery - camera_offset[1], dx, dy, random.randint(9,10), 0, self.BulletTexture)
                         bulletsGroup.add(b)
 
     def draw_debug(self, screen):
@@ -527,10 +550,13 @@ class Cave_Generator:
 
     def pick_starting_point(self, map):
         while True:
+            possibilities = []
             for indexy,y in enumerate(map):
                 for indexx,x in enumerate(y):
                     if x == 0:
-                        return indexy, indexx
+                        possibilities.append((indexy, indexx))
+        
+            return random.choice(possibilities)
 
     def list_rooms(self,map):
         pass

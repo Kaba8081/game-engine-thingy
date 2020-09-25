@@ -14,6 +14,7 @@ TILESIZE = 64
 FPS = 60
 OFFSET = [WIDTH/2,HEIGHT/2]
 DEBUG = False
+SENSIVITY = 8
 
 clock = pg.time.Clock()
 
@@ -42,6 +43,8 @@ lvl_dir = path.join(path.dirname(__file__),"levels")
 
 player_textures = [] # N, E, S, W <- this order needs to be followed
 tile_textures = []
+tile_damaged_textures = []
+tile_more_damaged_textures = []
 pistol01 = []
 bullet_textures = []
 
@@ -67,8 +70,8 @@ pistol = engine.Weapon(WIDTH/2, HEIGHT/2, 0, pistol01, bullet_textures[0], True,
 WeaponsGroup.add(pistol)
 p.assign_weapon(pistol)
 
-camera = engine.Camera(p, WIDTH, HEIGHT)
-map = engine.Map(lvl_dir, tile_textures)
+camera = engine.Camera(p, WIDTH, HEIGHT, SENSIVITY)
+map = engine.Map(lvl_dir, (tile_textures, tile_damaged_textures, tile_more_damaged_textures))
 cave_generator = engine.Cave_Generator(50,50,60,3,4,15)
 generated_level, starting_point = cave_generator.generate_cave()
 map.set_level(map.replace_tiles_from_generator(generated_level, TILESIZE))
@@ -94,6 +97,9 @@ def game():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_1:
                     DEBUG = not DEBUG
+
+        for tile in pg.sprite.groupcollide(allTiles, BulletsGroup, False, True, False):
+            tile.damage(1)
 
         if mouse_but[0] == 1:
             p.shoot(BulletsGroup, mouse_pos, camera.camera_offset)
@@ -124,6 +130,6 @@ def game():
             camera.debug1.update(screen, p.pos_change)
         fps_counter.update(screen, str(int(clock.get_fps())))
         pg.display.flip()
-        clock.tick(60)
+        clock.tick(61)
 
 game()
